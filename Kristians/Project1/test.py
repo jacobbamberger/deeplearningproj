@@ -90,7 +90,7 @@ def train_model(model, train_input, train_target,train_classes, test_input, test
 ###############################################Run the test##############################################################                
 
 for m in [ConvNet,AuxNet]:                            
-    nb_runs=25 #how many runs we average over                 
+    nb_runs =25 #how many runs we average over
     train_error=torch.empty(nb_runs,1) #make empty tensors to store errors and elapsed time from every run we average over
     test_error=torch.empty(nb_runs,1)
     time_spent=torch.empty(nb_runs,1)

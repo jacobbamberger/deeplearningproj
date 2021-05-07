@@ -8,6 +8,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+from torch import optim
 
 import dlc_practical_prologue as prologue
 import Networks
@@ -22,6 +23,11 @@ nb_out_2 = 4
 train_input, train_target, train_classes, test_input, test_target, test_classes =\
     prologue.generate_pair_sets(nb)
 
+mu, std = train_input.mean(), train_input.std()  # normalize input data
+train_input.sub_(mu).div_(std)
+test_input.sub_(mu).div_(std)
+
+
 print(train_classes.size())
 
 
@@ -30,6 +36,7 @@ print(train_classes.size())
 
 def train_model(model, train_input, train_target, mini_batch_size, nb_epochs = 25):
     main_criterion = nn.CrossEntropyLoss()
+    optimizer = optim.SGD(model.parameters(), lr=1e-1)
     aux_criterion_1 = nn.CrossEntropyLoss()
     aux_criterion_2 = nn.CrossEntropyLoss()
     eta = 1e-1
@@ -52,10 +59,7 @@ def train_model(model, train_input, train_target, mini_batch_size, nb_epochs = 2
             acc_loss = acc_loss + total_loss.item()
             model.zero_grad()
             total_loss.backward()
-
-            with torch.no_grad():
-                for p in model.parameters():
-                    p -= eta * p.grad
+            optimizer.step()
 
         print(e, acc_loss)
 
@@ -113,8 +117,8 @@ mini_batch_size = 50
 # Question 2
 
 for k in range(10):
-    model = Networks.FullNet(200,200)
-    train_model(model, train_input, train_target, mini_batch_size)
+    model = Networks.FullNet(40,40)
+    train_model(model, train_input, train_target, mini_batch_size, nb_epochs=50)
     nb_test_errors = compute_nb_errors(model, test_input, test_target, mini_batch_size)
     print('test error Net {:0.2f}% {:d}/{:d}'.format((100 * nb_test_errors) / test_input.size(0),
                                                       nb_test_errors, test_input.size(0)))
