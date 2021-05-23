@@ -29,8 +29,8 @@ class Linear(Module):
         self.bias = torch.empty(dim_out).uniform_(-dist, dist)
 
         #this is where we store this layer's gradient:
-        self.weights_grad_accum = torch.zeros(dim_out, dim_in)
-        self.bias_grad_accum = torch.zeros(dim_out)
+        self.weights_grad_accum = torch.zeros(self.dim_out, self.dim_in)
+        self.bias_grad_accum = torch.zeros(self.dim_out)
 
     def forward(self, input): # *input):  #input has to be of size..? Why was there the *? is it for bigger batch size??
         self.current_input = input
@@ -38,11 +38,13 @@ class Linear(Module):
         self.current_output = output # minibatchsize = 1 is necessary for this?
         return output
 
-    def backward(self , gradwrtoutput): # *gradwrtouput is assumed to be just one vector.
+    def backward(self, gradwrtoutput): # *gradwrtouput is assumed to be just one vector.
         y = self.current_output # or input??
         x = self.current_input
         
         dl_dy = gradwrtoutput
+        # print(self.weights.shape)
+        # print(dl_dy.shape)
         dl_dx = self.weights.t().mv(dl_dy)
 
         dl_dw = dl_dy.view(-1, 1).mm(x.view(1, -1)) 
@@ -57,6 +59,14 @@ class Linear(Module):
     def param(self):
         return [self.weights, self.bias]
 
+    def SGD_step(self, learning_rate):
+        self.weights = self.weights.sub(learning_rate * self.weights_grad_accum)
+        self.bias = self.bias.sub(learning_rate * self.bias_grad_accum)
+        
+        # reinitialization:
+        self.weights_grad_accum = torch.zeros(self.dim_out, self.dim_in)
+        self.bias_grad_accum = torch.zeros(self.dim_out)
+
 
 class Sequential(Module):
     def __init__(self, tuple_of_layers): #should we have an accum_grad for sequential too, or should de SGD optimize each one etc...
@@ -66,20 +76,26 @@ class Sequential(Module):
     def forward(self, input):
         x = input
         for layer in self.layers:
-            print(x)
+            # print(x)
             x = layer.forward(x)
         return x
 
     def backward(self, gradwrtoutput):
         current_grad = gradwrtoutput
-        for layer in self.layers:
-            print(current_grad)
-            current_grad = layer.backward(current_grad)
+        for i in range(len(self.layers)):
+            # print(current_grad)
+            current_grad = self.layers[len(self.layers)-1-i].backward(current_grad)
+        #for layer in self.layers:
+        #    print(current_grad)
+        #    current_grad = layer.backward(current_grad)
         return current_grad
-
 
     def param(self):
         return [layer.param for layer in self.layers]
+
+    def SGD_step(self, learning_rate):
+        for layer in self.layers:
+            layer.SGD_step(learning_rate)
 
 
 class Tanh(Module):
@@ -104,10 +120,14 @@ class ReLu(Module):
     def param(self):
         return []
 
+    def SGD_step(self, learning_rate):
+        return 0
+
 class MSE(Module):
 
-    def forward(prediction, target): #computes the error
-        raise NotImplementedError
+    def forward(self, prediction, target): #computes the error, still assumes batch_size=1
+        return (prediction - target)**2
 
-    def backward(prediction, target):#computes the gradient of the loss function with respect to the predictions
-        raise NotImplementedError
+    def backward(self, prediction, target):#computes the gradient of the loss function with respect to the predictions
+        return 2*(prediction-target)
+
