@@ -32,9 +32,9 @@ class Linear(Module):
         self.weights_grad_accum = torch.zeros(dim_out, dim_in)
         self.bias_grad_accum = torch.zeros(dim_out)
 
-    def forward(self, inpt): # *input):  #input has to be of size..? Why was there the *? is it for bigger batch size??
-        self.current_input = inpt
-        output = self.weights.mv(inpt) + self.bias
+    def forward(self, input): # *input):  #input has to be of size..? Why was there the *? is it for bigger batch size??
+        self.current_input = input
+        output = self.weights.mv(input) + self.bias
         self.current_output = output # minibatchsize = 1 is necessary for this?
         return output
 
@@ -59,23 +59,27 @@ class Linear(Module):
 
 
 class Sequential(Module):
-    def __init__(self, tuple_of_layers):
-
+    def __init__(self, tuple_of_layers): #should we have an accum_grad for sequential too, or should de SGD optimize each one etc...
         self.layers = tuple_of_layers
 
 
-    def forward(self, *input):
+    def forward(self, input):
         x = input
         for layer in self.layers:
-            x = layer(x)
-
+            print(x)
+            x = layer.forward(x)
         return x
 
-    def backward(self, *gradwrtoutput):
-        raise NotImplementedError
+    def backward(self, gradwrtoutput):
+        current_grad = gradwrtoutput
+        for layer in self.layers:
+            print(current_grad)
+            current_grad = layer.backward(current_grad)
+        return current_grad
+
 
     def param(self):
-        return [self.layers]
+        return [layer.param for layer in self.layers]
 
 
 class Tanh(Module):
@@ -91,11 +95,19 @@ class Tanh(Module):
 
 class ReLu(Module):
 
-    def forward(self, *input):
-        raise NotImplementedError
+    def forward(self, input):
+        return torch.max(torch.stack((input, torch.zeros(input.shape))), dim=0)[0]
 
-    def backward(self, *gradwrtoutput):
-        raise NotImplementedError
+    def backward(self, gradwrtoutput):
+        return torch.max(torch.stack((gradwrtoutput, torch.zeros(gradwrtoutput.shape))), dim=0)[0]
 
     def param(self):
         return []
+
+class MSE(Module):
+
+    def forward(prediction, target): #computes the error
+        raise NotImplementedError
+
+    def backward(prediction, target):#computes the gradient of the loss function with respect to the predictions
+        raise NotImplementedError
