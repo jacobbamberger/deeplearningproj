@@ -3,6 +3,8 @@ import math
 
 torch.set_grad_enabled(False)
 
+#The chain rule states that (f g)' = g' * f'(g())
+
 class Module(object):
     def forward(self , *input):
         raise  NotImplementedError
@@ -15,40 +17,42 @@ class Module(object):
 
 
 
-class Linear(Module): # right now this assumes that mini_batch_size = 1 
-    def __init__(self, dim_in, dim_out):
+class Linear(Module):
+    def __init__(self, dim_in, dim_out): #right now batch size is assumed to be 1.
         super().__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
 
         # Use pytorch style weight initialization
         dist = 1. / math.sqrt(self.dim_out)
-        self.weights = torch.empty(dim_in, dim_out).uniform_(-dist, dist)
+        self.weights = torch.empty(dim_out, dim_in).uniform_(-dist, dist)
+        self.bias = torch.empty(dim_out).uniform_(-dist, dist)
 
-        self.bias = torch.empty(dim_in, dim_out).uniform_(-dist, dist)
+        #this is where we store this layer's gradient:
+        self.weights_grad_accum = torch.zeros(dim_out, dim_in)
+        self.bias_grad_accum = torch.zeros(dim_out)
 
-    def forward(self, *input):
-        output = input.mm(self.weights) + self.bias
+    def forward(self, inpt): # *input):  #input has to be of size..? Why was there the *? is it for bigger batch size??
+        self.current_input = inpt
+        output = self.weights.mv(inpt) + self.bias
+        self.current_output = output # minibatchsize = 1 is necessary for this?
         return output
 
-    def backward(self , *gradwrtoutput):
-        raise  NotImplementedError
+    def backward(self , gradwrtoutput): # *gradwrtouput is assumed to be just one vector.
+        y = self.current_output # or input??
+        x = self.current_input
+        
+        dl_dy = gradwrtoutput
+        dl_dx = self.weights.t().mv(dl_dy)
 
-# The following is taken from Problem set 3
-# def backward_pass(w1, b1, #current weights and biases of the network
-#                   t, # target vector
-#                   x, s1, x1, # output of layer
-#                   dl_dw1, dl_db1): # tensors used to stor the sumulated sums of the gradient
-#     x0 = x
-#     dl_dx2 = dloss(x2, t)
-#     dl_ds2 = dsigma(s2) * dl_dx2
-#     dl_dx1 = w2.t().mv(dl_ds2)
-#     dl_ds1 = dsigma(s1) * dl_dx1
+        dl_dw = dl_dy.view(-1, 1).mm(x.view(1, -1)) 
+        dl_db = dl_dy
+        self.weights_grad_accum = self.weights_grad_accum.add(dl_dw)
+        self.bias_grad_accum = self.bias_grad_accum.add(dl_db)
 
-#     dl_dw2.add_(dl_ds2.view(-1, 1).mm(x1.view(1, -1)))
-#     dl_db2.add_(dl_ds2)
-#     dl_dw1.add_(dl_ds1.view(-1, 1).mm(x0.view(1, -1)))
-#     dl_db1.add_(dl_ds1)
+        #raise  NotImplementedError #what should be returned? dl_dx, or dl_dw, or both?
+        return dl_dx
+
 
     def param(self):
         return [self.weights, self.bias]
