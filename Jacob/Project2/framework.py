@@ -39,7 +39,7 @@ class Linear(Module):
         return output
 
     def backward(self, gradwrtoutput): # *gradwrtouput is assumed to be just one vector.
-        y = self.current_output # or input??
+        #y = self.current_output # or input??
         x = self.current_input
         
         dl_dy = gradwrtoutput
@@ -119,6 +119,22 @@ class ReLu(Module):
 
     def param(self):
         return []
+
+    def SGD_step(self, learning_rate):
+        return 0
+
+class Tanh(Module): #Tanh doesn't have any params so we don't need to update anything in gradient 
+    def forward(self,s):    #Do i need to initialize anything?? s is the input and x is output of activation 
+        self.s = s   #need to save s to get dsigma and dl_ds
+        x = s.tanh()
+        return x
+
+    def backward(self,dl_dx):
+        self.dsigma = (1-self.s.tanh().pow(2))
+        return self.dsigma*dl_dx  #returns dl_ds, which depends on dsigma(deriv of sigma) and dl_dx (last layer it's just dloss)
+
+    def param(self):
+        return [self.s, self.dsigma]
 
     def SGD_step(self, learning_rate):
         return 0
