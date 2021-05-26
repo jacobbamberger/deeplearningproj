@@ -2,6 +2,19 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+class LinearNet(nn.Module):
+    '''A simple 2-layer linear network that processes both images at the same time and directlys predicts the
+    output of interest.'''
+    def __init__(self, nb_hidden = 250):
+        super().__init__()
+        self.fc1 = nn.Linear(392, nb_hidden)
+        self.fc2 = nn.Linear(nb_hidden, 2)
+
+    def forward(self, x):
+        x = F.relu(self.fc1(x.view(-1, 392)))
+        x = self.fc2(x)
+        return x, None
+
 
 class ConvNet(nn.Module):
     '''A simple convolution network that processes both images at the same time and directlys predicts the
