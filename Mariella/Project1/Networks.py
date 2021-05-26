@@ -22,7 +22,7 @@ class FullNet(nn.Module):
         classes_2 = self.subnet(image2)
 
         # Combine predictions and compute final result
-        x = torch.stack((classes_1, classes_2), dim=1)
+        x = torch.stack((F.softmax(classes_1), F.softmax(classes_2)), dim=1)
         #print(x.size())
 
         x = F.relu(self.fc1(x.view(-1,20)))
@@ -56,7 +56,7 @@ class SiameseSubNet(nn.Module):
         #x = self.bn2(x)
         x = F.relu(self.fc1(x.view(-1, self.nb_out_2*4*4)))
 
-        x = F.relu(self.fc2(x))
+        x = self.fc2(x)
         return x
 
 

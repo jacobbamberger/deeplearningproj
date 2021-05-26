@@ -27,6 +27,9 @@ train_error = torch.empty(nb_runs, 1)
 test_error = torch.empty(nb_runs, 1)
 elapsed_time = torch.empty(nb_runs, 1)
 
+
+
+
 for run in range(nb_runs):
     model = Networks.FullNet(nb_hidden_siamese, nb_hidden_full)
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
