@@ -24,17 +24,18 @@ nb_hidden_siamese = 200
 nb_hidden_full = 200
 
 
-labels = ['ConvNet', 'ConvNet, small', 'AuxNet', 'ParallelNet', 'SiameseNet']
+labels = ['LinearNet','ConvNet', 'ConvNet, small', 'AuxNet', 'ParallelNet', 'SiameseNet']
 
-models = [Networks.ConvNet(),
+models = [ Networks.LinearNet(),
+          Networks.ConvNet(),
           Networks.ConvNet(20),
           Networks.AuxNet(),
           Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='parallel'),
           Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='siamese')]
 n_models = len(models)
 
-aux_loss_weights = [0, 0, 2, 0.7, 0.7]
-using_aux_loss = [False, False, True, True,True]
+aux_loss_weights = [0, 0, 0, 2, 0.7, 0.7]
+using_aux_loss = [False, False, False, True, True,True]
 train_error_means = torch.empty(n_models, )
 train_error_stds = torch.empty(n_models, )
 test_error_means = torch.empty(n_models, )
@@ -58,8 +59,6 @@ for m_index, model in enumerate(models):
     print()
 
 plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=train_error_stds, test_stds=test_error_stds)
-
-
 
 models = [Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='naive'),
           Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type = 'parallel'),
