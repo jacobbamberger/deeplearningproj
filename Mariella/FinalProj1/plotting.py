@@ -4,8 +4,10 @@ import numpy as np
 
 # Modified from the example on  https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.bar.html
 
-def plot_error_bars(train_errors, test_errors, model_labels, save_path=None, train_stds=None, test_stds=None):
+def plot_error_bars(train_errors, test_errors, model_labels, save_path=None, train_stds=None, test_stds=None, title= None):
 
+    if title is None:
+        title = 'Comparison of different architectures'
     x = np.arange(len(model_labels))  # the label locations
     width = 0.35  # the width of the bars
     fig, ax = plt.subplots()#
@@ -14,7 +16,9 @@ def plot_error_bars(train_errors, test_errors, model_labels, save_path=None, tra
     rects2 = ax.bar(x + width/2, test_errors, width, yerr=test_stds.numpy(), label='Test error')
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('Fraction of misclassified samples')
-    ax.set_title('Comparison of different architectures')
+
+
+    ax.set_title(title)
     ax.set_xticks(x)
     ax.set_xticklabels(model_labels)
     ax.legend()

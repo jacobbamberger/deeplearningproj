@@ -7,7 +7,7 @@ import plotting
 # Load and preprocess data
 nb = 1000 # Number of test and train samples is 1000 as stated in the exercise
 mini_batch_size = 50
-nb_runs = 10
+nb_runs = 15
 
 train_input, train_target, train_classes, test_input, test_target, test_classes =\
     prologue.generate_pair_sets(nb)
@@ -23,53 +23,49 @@ test_input.sub_(mu).div_(std)
 nb_hidden_siamese = 200
 nb_hidden_full = 200
 
-n_models = 4
-labels = ['ConvNet', 'AuxNet', 'ParallelNet', 'SiameseNet']
+
+labels = ['ConvNet', 'ConvNet, small', 'AuxNet', 'ParallelNet', 'SiameseNet']
+
+models = [Networks.ConvNet(),
+          Networks.ConvNet(20),
+          Networks.AuxNet(),
+          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='parallel'),
+          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='siamese')]
+n_models = len(models)
+
+aux_loss_weights = [0, 0, 2, 0.7, 0.7]
+using_aux_loss = [False, False, True, True,True]
 train_error_means = torch.empty(n_models, )
 train_error_stds = torch.empty(n_models, )
 test_error_means = torch.empty(n_models, )
 test_error_stds = torch.empty(n_models, )
 avg_train_time = torch.empty(n_models, )
 
+for m_index, model in enumerate(models):
+    print('Evaluating model ', m_index+1,',', labels[m_index], ':')
+    print(model)
+    pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print('Number of parameters', pytorch_total_params)
+    train_error_means[m_index], train_error_stds[m_index],test_error_means[m_index], test_error_stds[m_index], \
+    avg_train_time[m_index] = train_and_test.evaluate_model(model, train_input, train_target, test_input, test_target,
+                                                            mini_batch_size=mini_batch_size, nb_runs=nb_runs,
+                                                            train_classes=train_classes, use_aux_loss=using_aux_loss[m_index],
+                                                            aux_loss_weight=aux_loss_weights[m_index])
 
-model = Networks.ConvNet()
-
-train_error_means[0], train_error_stds[0], test_error_means[0], test_error_stds[0], \
-avg_train_time[0] = train_and_test.evaluate_model(model, train_input, train_target, test_input, test_target,
-                                                  mini_batch_size=mini_batch_size, nb_runs=nb_runs,
-                                                  train_classes=train_classes, use_aux_loss=False)
-model = Networks.AuxNet()
-
-train_error_means[1], train_error_stds[1], test_error_means[1], test_error_stds[1], \
-avg_train_time[1] = train_and_test.evaluate_model(model, train_input, train_target, test_input, test_target,
-                                                  mini_batch_size=mini_batch_size, nb_runs=nb_runs,
-                                                  train_classes=train_classes, use_aux_loss=True, aux_loss_weight=2)
-
-
-
-model = Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='parallel')
-train_error_means[2], train_error_stds[2], test_error_means[2], test_error_stds[2], \
-avg_train_time[2] = train_and_test.evaluate_model(model, train_input, train_target, test_input, test_target,
-                                                  mini_batch_size=mini_batch_size, nb_runs=nb_runs,
-                                                  train_classes=train_classes, use_aux_loss=True, aux_loss_weight=0.5)
-
-
-model = Networks.FullNet(nb_hidden_siamese,nb_hidden_full)
-train_error_means[3], train_error_stds[3], test_error_means[3], test_error_stds[3], \
-avg_train_time[3] = train_and_test.evaluate_model(model, train_input, train_target, test_input, test_target,
-                                                  mini_batch_size=mini_batch_size, nb_runs=nb_runs,
-                                                  train_classes=train_classes, use_aux_loss=True, aux_loss_weight=0.5)
+    print('Train error', "{:.5}".format(train_error_means[m_index].item()), ' +/-', "{:.3}".format(train_error_stds[m_index].item()))
+    print('Test error', "{:.5}".format(test_error_means[m_index].item()), ' +/-', "{:.3}".format(test_error_stds[m_index].item()))
+    print('Average model train time: ', "{:.3}".format(avg_train_time[m_index].item()), 's')
+    print()
 
 plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=train_error_stds, test_stds=test_error_stds)
-print(test_error_means)
-print(test_error_stds)
-exit()
 
-models = [Networks.FullNet(nb_hidden_siamese,nb_hidden_full),
-         Networks.FullNet(nb_hidden_siamese,nb_hidden_full, use_softmax=False),
+
+
+models = [Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='naive'),
           Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type = 'parallel'),
-          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='naive')]
-labels = ['SiameseNet','SiameseNet, no softmax', 'Parallel', 'Naive']
+          Networks.FullNet(nb_hidden_siamese,nb_hidden_full),
+          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, use_softmax=False)]
+labels = ['Naive', 'Parallel', 'SiameseNet','SiameseNet, no softmax']
 
 
 n_models = len(models)
@@ -78,21 +74,20 @@ n_models = len(models)
 
 
 for m_index, model in enumerate(models):
+    print('Evaluating model ', m_index+1,',', labels[m_index], ':')
     print(model)
     pytorch_total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('Number of parameters', pytorch_total_params)
     train_error_means[m_index], train_error_stds[m_index],test_error_means[m_index], test_error_stds[m_index], \
     avg_train_time[m_index] = train_and_test.evaluate_model(model, train_input, train_target, test_input, test_target,
-                                                            mini_batch_size=50, nb_runs=nb_runs, train_classes=train_classes,
-                                                            learning_rate=1e-1, nb_epochs=25, use_aux_loss=True,
-                                                            aux_loss_weight=0.5)
+                                                            mini_batch_size=50, nb_runs=nb_runs,
+                                                            train_classes=train_classes, use_aux_loss=True,
+                                                            aux_loss_weight=0.7)
+    print('Train error', "{:.5}".format(train_error_means[m_index].item()), ' +/-', "{:.3}".format(train_error_stds[m_index].item()))
+    print('Test error', "{:.5}".format(test_error_means[m_index].item()), ' +/-', "{:.3}".format(test_error_stds[m_index].item()))
+    print('Average model train time: ', "{:.3}".format(avg_train_time[m_index].item()), 's')
+    print()
 
-
-
-print( train_error_means)
-print(train_error_stds)
-print(test_error_means, test_error_stds)
-print(avg_train_time)
 
 plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=train_error_stds, test_stds=test_error_stds)
 
@@ -116,4 +111,10 @@ for w_index, weight in enumerate(aux_loss_weights):
                                                             learning_rate=1e-1, nb_epochs=25, use_aux_loss=True,
                                                             aux_loss_weight=weight)
 
-plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=train_error_stds, test_stds=test_error_stds)
+    print('Train error', "{:.5}".format(train_error_means[w_index].item()), ' +/-', "{:.3}".format(train_error_stds[m_index].item()))
+    print('Test error', "{:.5}".format(test_error_means[w_index].item()), ' +/-', "{:.3}".format(test_error_stds[m_index].item()))
+    print('Average model train time: ', "{:.3}".format(avg_train_time[w_index].item()), 's')
+    print()
+
+plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=train_error_stds,
+                         test_stds=test_error_stds, title = 'Varying the weight of the auxilliary loss')

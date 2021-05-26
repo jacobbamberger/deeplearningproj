@@ -8,9 +8,11 @@ class ConvNet(nn.Module):
     output of interest.'''
     def __init__(self, nb_hidden = 250):
         super().__init__()
-        self.conv1 = nn.Conv2d(2, 30, kernel_size=3) #makes 14x14 -> 12x12
-        self.conv2 = nn.Conv2d(30, 60, kernel_size=3) #makes 6x6 -> 4x4
-        self.fc1 = nn.Linear(240, nb_hidden)
+        self.channels_1 = 30
+        self.channels_2 = 60
+        self.conv1 = nn.Conv2d(2, self.channels_1, kernel_size=3)  # makes 14x14 -> 12x12
+        self.conv2 = nn.Conv2d(self.channels_1, self.channels_2, kernel_size=3)  # makes 6x6 -> 4x4
+        self.fc1 = nn.Linear(self.channels_2*4, nb_hidden)
         self.fc2 = nn.Linear(nb_hidden, 2)
 
     def forward(self, x):
@@ -18,7 +20,7 @@ class ConvNet(nn.Module):
         x = F.relu(x)
         x = F.max_pool2d(self.conv2(x), kernel_size=2)   #4x4->2x2
         x = F.relu(x)
-        x = F.relu(self.fc1(x.view(-1, 240)))
+        x = F.relu(self.fc1(x.view(-1, self.channels_2*4)))
         x = self.fc2(x)
         return x, None
 
@@ -27,11 +29,13 @@ class AuxNet(nn.Module):
     """ A simple convolution network that processes both images at the same time, but can make use of an auxiliary loss. """
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(2, 30, kernel_size=3) #makes 14x14 -> 12x12
-        self.conv2 = nn.Conv2d(30, 60, kernel_size=3) #makes 6x6 -> 4x4
-        self.bn1 = nn.BatchNorm2d(30)
-        self.bn2 = nn.BatchNorm2d(60)
-        self.fc1 = nn.Linear(240, 20)
+        self.channels_1 = 30
+        self.channels_2 = 60
+        self.conv1 = nn.Conv2d(2, self.channels_1, kernel_size=3) #makes 14x14 -> 12x12
+        self.conv2 = nn.Conv2d(self.channels_1, self.channels_2, kernel_size=3) #makes 6x6 -> 4x4
+        self.bn1 = nn.BatchNorm2d(self.channels_1)
+        self.bn2 = nn.BatchNorm2d(self.channels_2)
+        self.fc1 = nn.Linear(self.channels_2*4, 20)
         self.fc2 = nn.Linear(20, 2)
 
     def forward(self, x):
@@ -41,7 +45,7 @@ class AuxNet(nn.Module):
         x = F.max_pool2d(self.conv2(x), kernel_size=2)   #4x4->2x2
         x = self.bn2(x)
         x = F.relu(x)
-        y = self.fc1(x.view(-1, 240))
+        y = self.fc1(x.view(-1,self.channels_2*4))
         x = self.fc2(F.relu(y))
         return x, y[:, :10], y[:, 10:]
 

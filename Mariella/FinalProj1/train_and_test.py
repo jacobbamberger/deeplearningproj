@@ -13,7 +13,8 @@ def evaluate_model(model, train_input, train_target,test_input, test_target, min
     elapsed_time = torch.empty(nb_runs, 1)
     nb = train_input.size()[0]
     for run in range(nb_runs):
-        model.apply(weight_reset)
+        model.apply(weight_reset)  #This makes sure that we actually start from the same weight initialization
+        # for each run.
 
         tic = time.time()
         train_model(model, train_input, train_target, train_classes=train_classes, learning_rate=learning_rate,
@@ -31,7 +32,7 @@ def evaluate_model(model, train_input, train_target,test_input, test_target, min
 
 
 def train_model(model, train_input, train_target, train_classes=None, learning_rate=1e-1, mini_batch_size=50,
-                nb_epochs=25, use_aux_loss=True,aux_loss_weight=0.2):
+                nb_epochs=25, use_aux_loss=True, aux_loss_weight=0.2):
 
     if  use_aux_loss and train_classes is None:
         print('No training classes provided. Turning auxilliary loss off.')
