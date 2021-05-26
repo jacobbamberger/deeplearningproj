@@ -69,7 +69,11 @@ labels = ['Naive', 'Parallel', 'SiameseNet','SiameseNet, no softmax']
 
 
 n_models = len(models)
-
+train_error_means = torch.empty(n_models, )
+train_error_stds = torch.empty(n_models, )
+test_error_means = torch.empty(n_models, )
+test_error_stds = torch.empty(n_models, )
+avg_train_time = torch.empty(n_models, )
 
 
 
