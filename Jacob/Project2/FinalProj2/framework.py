@@ -32,8 +32,8 @@ class Linear(Module):
         #self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
 
         # this is where we store this layer's gradient:
-        self.weights_grad_accum = torch.zeros(self.dim_out, self.dim_in)
-        self.bias_grad_accum = torch.zeros(self.dim_out)
+        self.weights_grad_accum = torch.empty(self.dim_out, self.dim_in).fill_(0)
+        self.bias_grad_accum = torch.empty(self.dim_out).fill_(0)
 
     def forward(self, input): 
         self.current_input = input
@@ -62,8 +62,8 @@ class Linear(Module):
         self.bias = self.bias.sub(learning_rate * self.bias_grad_accum)
         
         # reinitialization:
-        self.weights_grad_accum = torch.zeros(self.dim_out, self.dim_in)
-        self.bias_grad_accum = torch.zeros(self.dim_out)
+        self.weights_grad_accum = torch.empty(self.dim_out, self.dim_in).fill_(0)
+        self.bias_grad_accum = torch.empty(self.dim_out).fill_(0)
 
 
 class Sequential(Module):
@@ -102,10 +102,11 @@ class Sequential(Module):
 class ReLu(Module):
 
     def forward(self, input):
-        return torch.max(torch.stack((input, torch.zeros(input.shape))), dim=0)[0]
+        self.current_output = input.max(torch.empty(input.shape).fill_(0))
+        return self.current_output
 
     def backward(self, gradwrtoutput):
-        return torch.max(torch.stack((gradwrtoutput, torch.zeros(gradwrtoutput.shape))), dim=0)[0]
+        return (self.current_output >0)* gradwrtoutput
 
     def param(self):
         return []

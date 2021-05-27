@@ -17,9 +17,9 @@ def generate_disc_set(nb):
 def train(model, train_input, train_target, nb_epochs, batch_size, learning_rate, loss=None):
     nb_samples = train_input.size(0)
     if loss is None:
-        loss = MSE()
+        loss = framework.MSE()
     if train_input.size(0)%batch_size !=0:
-        print("Bactch size should divid length of training data.")
+        print("Batch size should divide length of training data.")
     for e in range(nb_epochs):
         loss_acc=0
         for b in range(0, nb_samples, batch_size):
@@ -67,14 +67,30 @@ test_target = test_target
 
 # Network sugested in the miniproj handout:
 model = framework.Sequential((framework.Linear(2, 25), 
-                              framework.Tanh(), 
-                              framework.Linear(25, 25), 
                               framework.Tanh(),
-                              framework.Linear(25, 25), 
+                              framework.Linear(25, 25),
+                              framework.Tanh(),
+                              framework.Linear(25, 25),
                               framework.Tanh(),
                               framework.Linear(25, 1),
                               framework.Sigmoid()))
                              
+loss = framework.MSE()
+
+print("training on 250 epochs, batch size 50, and learning rate 0.005.")
+train(model, train_input, train_target, nb_epochs=250, batch_size=50, learning_rate=0.005, loss=loss)
+
+print("Test error: ", compute_nb_errors(model, test_input, test_target))
+
+model = framework.Sequential((framework.Linear(2, 25),
+                              framework.ReLu(),
+                              #framework.Linear(25, 25),
+                              #framework.ReLu(),
+                              #framework.Linear(25, 25),
+                              #framework.ReLu(),
+                              framework.Linear(25, 1),
+                              framework.ReLu()))
+
 loss = framework.MSE()
 
 print("training on 250 epochs, batch size 50, and learning rate 0.005.")
