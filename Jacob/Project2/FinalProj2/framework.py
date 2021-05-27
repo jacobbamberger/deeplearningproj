@@ -15,38 +15,6 @@ class Module(object):
     def param(self):
         return []
 
-    def train(self, train_input, train_target, nb_epochs, batch_size, learning_rate, loss=None):
-        nb_samples = train_input.size(0)
-        if loss is None:
-            loss = MSE()
-        if train_input.size(0)%batch_size !=0:
-            print("Bactch size should divid length of training data.")
-        for e in range(nb_epochs):
-            loss_acc=0
-            for b in range(0, nb_samples, batch_size):
-                for i in range(batch_size):
-                    prediction = self.forward(train_input[b+i])
-                    loss_acc += loss.forward(prediction, train_target[b+i])
-                    self.backward(loss.backward(prediction, train_target[b+i]))
-                self.SGD_step(learning_rate)
-            if e%5 == 0:
-                print('epoch nb: ', e, 'loss: ', loss_acc)
-
-    def compute_nb_errors(self, data_input, data_target, batch_size=1):
-        tot_right = 0
-
-        for b in range(0, data_input.size(0), batch_size):
-            for i in range(batch_size):
-                output = self.forward(data_input[b+i])
-                if output <0.0 and  data_target[b+i]==0: #this is specific to the toy dataset.
-                    tot_right+=1
-                elif output >=0.0 and  data_target[b+i]==1:
-                    tot_right+=1
-
-        print("Accuracy on the data set is: ", tot_right/data_input.size(0))
-        return tot_right/data_input.size(0)
-
-
 
 class Linear(Module):
     def __init__(self, dim_in, dim_out): #right now batch size is assumed to be 1.
@@ -55,11 +23,12 @@ class Linear(Module):
         self.dim_out = dim_out
 
         # Use pytorch style weight initialization
-        #dist = 1. / math.sqrt(self.dim_out)
-        #self.weights = torch.empty(dim_out, dim_in).uniform_(-dist, dist)
-        #self.bias = torch.empty(dim_out).uniform_(-dist, dist)
-        self.weights = torch.nn.init.normal_(torch.empty(dim_out, dim_in), mean=0.0, std=1.0)
-        self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
+        dist = 1. / math.sqrt(self.dim_out)
+        self.weights = torch.empty(dim_out, dim_in).uniform_(-dist, dist)
+        self.bias = torch.empty(dim_out).uniform_(-dist, dist)
+        ## Normal distribution initialization:
+        #self.weights = torch.nn.init.normal_(torch.empty(dim_out, dim_in), mean=0.0, std=1.0)
+        #self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
 
         #this is where we store this layer's gradient:
         self.weights_grad_accum = torch.zeros(self.dim_out, self.dim_in)
@@ -130,17 +99,6 @@ class Sequential(Module):
         for layer in self.layers:
             layer.SGD_step(learning_rate)
 
-
-class Tanh(Module):
-
-    def forward(self, *input):
-        raise NotImplementedError
-
-    def backward(self, *gradwrtoutput):
-        raise NotImplementedError
-
-    def param(self):
-        return []
 
 class ReLu(Module):
 
