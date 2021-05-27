@@ -1,7 +1,7 @@
 import torch
 import math
 import framework
-
+import frameworkBlock
 torch.set_grad_enabled(False)
 
 ######################################################################
@@ -19,17 +19,16 @@ def train(model, train_input, train_target, nb_epochs, batch_size, learning_rate
     if loss is None:
         loss = framework.MSE()
     if train_input.size(0)%batch_size !=0:
-        print("Batch size should divide length of training data.")
+        print("Bactch size should divid length of training data.")
     for e in range(nb_epochs):
         loss_acc=0
         for b in range(0, nb_samples, batch_size):
-            for i in range(batch_size):
-                prediction = model.forward(train_input[b+i])
-                loss_acc += loss.forward(prediction, train_target[b+i])
-                model.backward(loss.backward(prediction, train_target[b+i]))
+            prediction = model.forward(train_input.narrow(0, b, batch_size))
+            loss_acc += loss.forward(prediction, train_target.narrow(0, b, batch_size))
+            model.backward(loss.backward(prediction, train_target.narrow(0, b, batch_size)))
             model.SGD_step(learning_rate)
         if e%5 == 0:
-            print('epoch nb: ', e, 'loss: ', loss_acc[0])
+            print('epoch nb: ', e, 'loss: ', loss_acc)
 
     print("Final train error: ", compute_nb_errors(model, train_input, train_target))
 
@@ -66,35 +65,21 @@ test_target = test_target
 # Model initialization:
 
 # Network sugested in the miniproj handout:
-model = framework.Sequential((framework.Linear(2, 25), 
-                              framework.Tanh(),
-                              framework.Linear(25, 25),
-                              framework.Tanh(),
-                              framework.Linear(25, 25),
-                              framework.Tanh(),
-                              framework.Linear(25, 1),
-                              framework.Sigmoid()))
+model = frameworkBlock.Sequential((frameworkBlock.Linear(2, 25),
+                              frameworkBlock.Tanh(),
+                              frameworkBlock.Linear(25, 25),
+                              frameworkBlock.Tanh(),
+                              frameworkBlock.Linear(25, 25),
+                              frameworkBlock.Tanh(),
+                              frameworkBlock.Linear(25, 1),
+                              frameworkBlock.ReLu()))
                              
-loss = framework.MSE()
+test_loss = frameworkBlock.MSE()
+
+
 
 print("training on 250 epochs, batch size 50, and learning rate 0.005.")
-train(model, train_input, train_target, nb_epochs=250, batch_size=50, learning_rate=0.005, loss=loss)
-
-print("Test error: ", compute_nb_errors(model, test_input, test_target))
-
-model = framework.Sequential((framework.Linear(2, 25),
-                              framework.ReLu(),
-                              #framework.Linear(25, 25),
-                              #framework.ReLu(),
-                              #framework.Linear(25, 25),
-                              framework.ReLu(),
-                              framework.Linear(25, 1),
-                              framework.ReLu()))
-
-loss = framework.MSE()
-
-print("training on 250 epochs, batch size 50, and learning rate 0.005.")
-train(model, train_input, train_target, nb_epochs=250, batch_size=50, learning_rate=0.005, loss=loss)
+train(model, train_input, train_target, nb_epochs=250, batch_size=50, learning_rate=0.005, loss=test_loss)
 
 print("Test error: ", compute_nb_errors(model, test_input, test_target))
 
