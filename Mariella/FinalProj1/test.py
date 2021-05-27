@@ -7,7 +7,7 @@ import plotting
 # Load and preprocess data
 nb = 1000 # Number of test and train samples is 1000 as stated in the exercise
 mini_batch_size = 50
-nb_runs = 15
+nb_runs = 10
 
 train_input, train_target, train_classes, test_input, test_target, test_classes =\
     prologue.generate_pair_sets(nb)
@@ -34,7 +34,7 @@ models = [ Networks.LinearNet(),
           Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='siamese')]
 n_models = len(models)
 
-aux_loss_weights = [0, 0, 0, 2, 0.7, 0.7]
+aux_loss_weights = [0, 0, 0, 2, 0.9, 0.9]
 using_aux_loss = [False, False, False, True, True,True]
 train_error_means = torch.empty(n_models, )
 train_error_stds = torch.empty(n_models, )
@@ -60,10 +60,10 @@ for m_index, model in enumerate(models):
 
 plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=train_error_stds, test_stds=test_error_stds)
 
-models = [Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='naive'),
-          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type = 'parallel'),
-          Networks.FullNet(nb_hidden_siamese,nb_hidden_full),
-          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, use_softmax=False)]
+models = [Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type ='naive', use_softmax=True),
+          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, subnet_type = 'parallel', use_softmax=True),
+          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, use_softmax=True),
+          Networks.FullNet(nb_hidden_siamese,nb_hidden_full, use_softmax=True)]
 labels = ['Naive', 'Parallel', 'SiameseNet','SiameseNet, no softmax']
 
 
@@ -114,10 +114,10 @@ for w_index, weight in enumerate(aux_loss_weights):
                                                             learning_rate=1e-1, nb_epochs=25, use_aux_loss=True,
                                                             aux_loss_weight=weight)
 
-    print('Train error', "{:.5}".format(train_error_means[w_index].item()), ' +/-', "{:.3}".format(train_error_stds[m_index].item()))
-    print('Test error', "{:.5}".format(test_error_means[w_index].item()), ' +/-', "{:.3}".format(test_error_stds[m_index].item()))
+    print('Train error', "{:.5}".format(train_error_means[w_index].item()), ' +/-', "{:.3}".format(train_error_stds[w_index].item()))
+    print('Test error', "{:.5}".format(test_error_means[w_index].item()), ' +/-', "{:.3}".format(test_error_stds[w_index].item()))
     print('Average model train time: ', "{:.3}".format(avg_train_time[w_index].item()), 's')
     print()
 
-plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=train_error_stds,
-                         test_stds=test_error_stds, title = 'Varying the weight of the auxilliary loss')
+plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=None,
+                         test_stds=None, title = 'Varying the weight of the auxiliary loss')
