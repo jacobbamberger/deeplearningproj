@@ -10,7 +10,7 @@ torch.set_grad_enabled(False)
 
 def generate_disc_set(nb):
     input = torch.empty(nb, 2).uniform_(-1, 1)
-    target = input.pow(2).sum(1).sub(2 / math.pi).sign().add(1).div(2).long()
+    target = input.pow(2).sum(1).sub(2 / math.pi).sign().add(1).div(2).float()
     return input, target
 
 
@@ -39,9 +39,9 @@ def compute_nb_errors(model, data_input, data_target, batch_size=1):
     for b in range(0, data_input.size(0), batch_size):
         for i in range(batch_size):
             output = model.forward(data_input[b+i])
-            if output <0.0 and  data_target[b+i]==0: #this is specific to the toy dataset.
+            if output <0.5 and  data_target[b+i]==0: #this is specific to the toy dataset.
                 tot_right+=1
-            elif output >=0.0 and  data_target[b+i]==1:
+            elif output >=0.5 and  data_target[b+i]==1:
                 tot_right+=1
 
     return 1-tot_right/data_input.size(0)
@@ -60,8 +60,8 @@ mean, std = train_input.mean(), train_input.std()
 train_input.sub_(mean).div_(std)
 test_input.sub_(mean).div_(std)
 
-train_target = train_target.float()
-test_target = test_target.float()
+train_target = train_target
+test_target = test_target
 
 # Model initialization:
 
@@ -72,13 +72,14 @@ model = framework.Sequential((framework.Linear(2, 25),
                               framework.Tanh(),
                               framework.Linear(25, 25), 
                               framework.Tanh(),
-                              framework.Linear(25, 1)))
+                              framework.Linear(25, 1),
+                              framework.Sigmoid()))
                              
 loss = framework.MSE()
 
-print("training on 150 epochs, batch size 50, and learning rate 0.0005.")
-train(model, train_input, train_target, nb_epochs=150, batch_size=50, learning_rate=0.0005, loss=loss)
+print("training on 250 epochs, batch size 50, and learning rate 0.005.")
+train(model, train_input, train_target, nb_epochs=250, batch_size=50, learning_rate=0.005, loss=loss)
 
-print("Test error: ", compute_nb_errors(model, test_input, test_target))
+print("Test error: ", compute_nb_errors(model, test_input, test_target)[0])
 
 
