@@ -55,9 +55,11 @@ class Linear(Module):
         self.dim_out = dim_out
 
         # Use pytorch style weight initialization
-        dist = 1. / math.sqrt(self.dim_out)
-        self.weights = torch.empty(dim_out, dim_in).uniform_(-dist, dist)
-        self.bias = torch.empty(dim_out).uniform_(-dist, dist)
+        #dist = 1. / math.sqrt(self.dim_out)
+        #self.weights = torch.empty(dim_out, dim_in).uniform_(-dist, dist)
+        #self.bias = torch.empty(dim_out).uniform_(-dist, dist)
+        self.weights = torch.nn.init.normal_(torch.empty(dim_out, dim_in), mean=0.0, std=1.0)
+        self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
 
         #this is where we store this layer's gradient:
         self.weights_grad_accum = torch.zeros(self.dim_out, self.dim_in)
