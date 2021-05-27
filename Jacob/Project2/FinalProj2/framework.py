@@ -17,12 +17,13 @@ class Module(object):
 
 
 class Linear(Module):
-    def __init__(self, dim_in, dim_out): #right now batch size is assumed to be 1.
+    def __init__(self, dim_in, dim_out):
         super().__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
 
-        # Use pytorch style weight initialization
+        ## Weight initialization:
+        ## Uniform initialization:
         dist = 1. / math.sqrt(self.dim_out)
         self.weights = torch.empty(dim_out, dim_in).uniform_(-dist, dist)
         self.bias = torch.empty(dim_out).uniform_(-dist, dist)
@@ -30,23 +31,19 @@ class Linear(Module):
         #self.weights = torch.nn.init.normal_(torch.empty(dim_out, dim_in), mean=0.0, std=1.0)
         #self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
 
-        #this is where we store this layer's gradient:
+        # this is where we store this layer's gradient:
         self.weights_grad_accum = torch.zeros(self.dim_out, self.dim_in)
         self.bias_grad_accum = torch.zeros(self.dim_out)
 
-    def forward(self, input): # *input):  #input has to be of size..? Why was there the *? is it for bigger batch size??
+    def forward(self, input): 
         self.current_input = input
         output = self.weights.mv(input) + self.bias
-        self.current_output = output # minibatchsize = 1 is necessary for this?
         return output
 
-    def backward(self, gradwrtoutput): # *gradwrtouput is assumed to be just one vector.
-        #y = self.current_output # or input??
-        x = self.current_input
+    def backward(self, gradwrtoutput): 
+        x = self.current_input # We store this because it is used in backwards
         
         dl_dy = gradwrtoutput
-        # print(self.weights.shape)
-        # print(dl_dy.shape)
         dl_dx = self.weights.t().mv(dl_dy)
 
         dl_dw = dl_dy.view(-1, 1).mm(x.view(1, -1)) 
@@ -54,12 +51,11 @@ class Linear(Module):
         self.weights_grad_accum = self.weights_grad_accum.add(dl_dw)
         self.bias_grad_accum = self.bias_grad_accum.add(dl_db)
 
-        #raise  NotImplementedError #what should be returned? dl_dx, or dl_dw, or both?
         return dl_dx
 
 
     def param(self):
-        return [self.weights, self.bias]
+        return [(self.weights, self.weights_grad_accum), (self.bias, self.bias_grad_accum)]
 
     def SGD_step(self, learning_rate):
         self.weights = self.weights.sub(learning_rate * self.weights_grad_accum)
@@ -93,7 +89,10 @@ class Sequential(Module):
         return current_grad
 
     def param(self):
-        return [layer.param for layer in self.layers]
+        params = []
+        for layer in self.layers:
+            params += layer.param()
+        return params
 
     def SGD_step(self, learning_rate):
         for layer in self.layers:
@@ -112,23 +111,37 @@ class ReLu(Module):
         return []
 
     def SGD_step(self, learning_rate):
-        return 0
+        return None
 
 class Tanh(Module): #Tanh doesn't have any params so we don't need to update anything in gradient 
-    def forward(self,s):    #Do i need to initialize anything?? s is the input and x is output of activation 
-        self.s = s   #need to save s to get dsigma and dl_ds
-        x = s.tanh()
-        return x
+    def forward(self,input):    #Do i need to initialize anything?? s is the input and x is output of activation 
+        self.current_input = input
+        return input.tanh()
 
-    def backward(self,dl_dx):
-        self.dsigma = (1-self.s.tanh().pow(2))
-        return self.dsigma*dl_dx  #returns dl_ds, which depends on dsigma(deriv of sigma) and dl_dx (last layer it's just dloss)
+    def backward(self, gradwrtoutput):
+        dsigma = (1-self.current_input.tanh().pow(2))
+        return dsigma*gradwrtoutput 
 
     def param(self):
-        return [self.s, self.dsigma]
+        return []
 
     def SGD_step(self, learning_rate):
-        return 0
+        return None
+
+class Sigmoid(Module):
+    def forward(self, input):
+        self.current_output = 1/(1+torch.exp(-input))
+        return self.current_output
+
+    def backward(self, gradwrtoutput):
+        dsigma = self.current_output*(1-self.current_output)
+        return dsigma*gradwrtoutput
+
+    def param(self):
+        return []
+
+    def SGD_step(self, learning_rate):
+        return None
 
 class MSE(Module):
 
