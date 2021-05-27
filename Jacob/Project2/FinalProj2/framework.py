@@ -1,7 +1,8 @@
-import torch
+# import torch
 import math
+from torch import empty as t_empty
 
-torch.set_grad_enabled(False)
+
 
 #The chain rule states that (f g)' = g' * f'(g())
 
@@ -25,15 +26,15 @@ class Linear(Module):
         ## Weight initialization:
         ## Uniform initialization:
         dist = 1. / math.sqrt(self.dim_out)
-        self.weights = torch.empty(dim_out, dim_in).uniform_(-dist, dist)
-        self.bias = torch.empty(dim_out).uniform_(-dist, dist)
+        self.weights = t_empty(dim_out, dim_in).uniform_(-dist, dist)
+        self.bias = t_empty(dim_out).uniform_(-dist, dist)
         ## Normal distribution initialization:
         #self.weights = torch.nn.init.normal_(torch.empty(dim_out, dim_in), mean=0.0, std=1.0)
         #self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
 
         # this is where we store this layer's gradient:
-        self.weights_grad_accum = torch.empty(self.dim_out, self.dim_in).fill_(0)
-        self.bias_grad_accum = torch.empty(self.dim_out).fill_(0)
+        self.weights_grad_accum = t_empty(self.dim_out, self.dim_in).fill_(0)
+        self.bias_grad_accum = t_empty(self.dim_out).fill_(0)
 
     def forward(self, input): 
         self.current_input = input
@@ -62,8 +63,8 @@ class Linear(Module):
         self.bias = self.bias.sub(learning_rate * self.bias_grad_accum)
         
         # reinitialization:
-        self.weights_grad_accum = torch.empty(self.dim_out, self.dim_in).fill_(0)
-        self.bias_grad_accum = torch.empty(self.dim_out).fill_(0)
+        self.weights_grad_accum = t_empty(self.dim_out, self.dim_in).fill_(0)
+        self.bias_grad_accum = t_empty(self.dim_out).fill_(0)
 
 
 class Sequential(Module):
@@ -102,7 +103,7 @@ class Sequential(Module):
 class ReLu(Module):
 
     def forward(self, input):
-        self.current_output = input.max(torch.empty(input.shape).fill_(0))
+        self.current_output = input.max(t_empty(input.shape).fill_(0))
         return self.current_output
 
     def backward(self, gradwrtoutput):
