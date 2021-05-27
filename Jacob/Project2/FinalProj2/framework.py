@@ -130,7 +130,8 @@ class Tanh(Module): #Tanh doesn't have any params so we don't need to update any
 
 class Sigmoid(Module):
     def forward(self, input):
-        self.current_output = 1/(1+torch.exp(-input))
+        argument = -input
+        self.current_output = 1/(1+argument.exp())
         return self.current_output
 
     def backward(self, gradwrtoutput):
