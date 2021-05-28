@@ -3,7 +3,6 @@ from torch import empty as t_empty
 import math
 
 
-# The chain rule states that (f g)' = g' * f'(g())
 
 class Module(object):
     def forward(self, *input):
