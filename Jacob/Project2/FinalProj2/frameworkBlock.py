@@ -17,19 +17,22 @@ class Module(object):
 
 
 class Linear(Module):
-    def __init__(self, dim_in, dim_out):
+    def __init__(self, dim_in, dim_out, weight_init="uniform"):
         super().__init__()
         self.dim_in = dim_in
         self.dim_out = dim_out
 
         ## Weight initialization:
+        
         ## Uniform initialization:
-        dist = 1. / math.sqrt(self.dim_out)
-        self.weights = t_empty(dim_out, dim_in).uniform_(-dist, dist)
-        self.bias = t_empty(dim_out).uniform_(-dist, dist)
+        if weight_init == "uniform":
+            dist = 1. / math.sqrt(self.dim_out)
+            self.weights = t_empty(dim_out, dim_in).uniform_(-dist, dist)
+            self.bias = t_empty(dim_out).uniform_(-dist, dist)
+        else:
         ## Normal distribution initialization:
-        # self.weights = torch.nn.init.normal_(torch.empty(dim_out, dim_in), mean=0.0, std=1.0)
-        # self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
+            self.weights = torch.nn.init.normal_(torch.empty(dim_out, dim_in), mean=0.0, std=1.0)
+            self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
 
         # this is where we store this layer's gradient:
         self.weights_grad_accum = t_empty(self.dim_out, self.dim_in).fill_(0)
