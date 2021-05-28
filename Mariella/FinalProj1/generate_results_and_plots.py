@@ -53,19 +53,19 @@ for m_index, model in enumerate(models):
     avg_train_time[m_index] = train_and_test.evaluate_model(model, train_input, train_target, test_input, test_target,
                                                             mini_batch_size=mini_batch_size, nb_runs=nb_runs,
                                                             train_classes=train_classes, use_aux_loss=using_aux_loss[m_index],
-                                                            aux_loss_weight=aux_loss_weights[m_index])
+                                                            aux_loss_weight=aux_loss_weights[m_index], nb_epochs = 25)
 
     print('Train error', "{:.5}".format(train_error_means[m_index].item()), ' +/-', "{:.3}".format(train_error_stds[m_index].item()))
     print('Test error', "{:.5}".format(test_error_means[m_index].item()), ' +/-', "{:.3}".format(test_error_stds[m_index].item()))
     print('Average model train time: ', "{:.3}".format(avg_train_time[m_index].item()), 's')
     print()
-plotting.plot_error_bars(train_error_means[0:4], test_error_means[0:4], labels[0:4], save_path=None, train_stds=train_error_stds[0:4], test_stds=test_error_stds[0:4])
-plotting.plot_error_bars(train_error_means[4:], test_error_means[4:], labels[4:], save_path=None, train_stds=train_error_stds[4:], test_stds=test_error_stds[4:])
+plotting.plot_error_bars(train_error_means[0:4], test_error_means[0:4], labels[0:4], save_path='NPart1.pdf', train_stds=train_error_stds[0:4], test_stds=test_error_stds[0:4])
+plotting.plot_error_bars(train_error_means[4:], test_error_means[4:], labels[4:], save_path='NPart2.pdf', train_stds=train_error_stds[4:], test_stds=test_error_stds[4:])
 
 
 # Small parameter study for the auxiliary weight for our best network
 
-aux_loss_weights = [0.1, 0.3, 0.7,0.9, 1.1, 1.3]
+aux_loss_weights = [0.1, 0.3, 0.5, 0.7,0.9, 1.1, 1.3]
 labels = [str(weight) for weight in aux_loss_weights]
 
 n_weights = len(aux_loss_weights)
@@ -88,5 +88,5 @@ for w_index, weight in enumerate(aux_loss_weights):
     print('Average model train time: ', "{:.3}".format(avg_train_time[w_index].item()), 's')
     print()
 
-plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path=None, train_stds=None,
+plotting.plot_error_bars(train_error_means, test_error_means, labels, save_path='AuxLoss.pdf', train_stds=None,
                          test_stds=None, title = 'Varying the weight of the auxiliary loss')
