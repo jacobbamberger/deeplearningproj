@@ -23,6 +23,7 @@ def plot_error_bars(train_errors, test_errors, model_labels, save_path=None, tra
     ax.legend()
 
     # Write percentages on top
+    #TODO: Uncomment for submission, this requires a very new version of matplotlib
     ax.bar_label(rects1, padding=3)
     ax.bar_label(rects2, padding=3)
 

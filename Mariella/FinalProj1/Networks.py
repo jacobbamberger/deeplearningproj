@@ -16,10 +16,10 @@ class LinearNet(nn.Module):
         return x, None
 
 
-class ConvNet(nn.Module):
+class ConvNet(nn.Module,):
     '''A simple convolution network that processes both images at the same time and directlys predicts the
     output of interest.'''
-    def __init__(self, nb_hidden = 250):
+    def __init__(self, nb_hidden=100,  use_batch_norm = False):
         super().__init__()
         self.channels_1 = 30
         self.channels_2 = 60
@@ -27,11 +27,19 @@ class ConvNet(nn.Module):
         self.conv2 = nn.Conv2d(self.channels_1, self.channels_2, kernel_size=3)  # makes 6x6 -> 4x4
         self.fc1 = nn.Linear(self.channels_2*4, nb_hidden)
         self.fc2 = nn.Linear(nb_hidden, 2)
+        self.use_batch_norm = use_batch_norm
+        if self.use_batch_norm:
+            self.bn1 = nn.BatchNorm2d(self.channels_1)
+            self.bn2 = nn.BatchNorm2d(self.channels_2)
 
     def forward(self, x):
         x = F.max_pool2d(self.conv1(x), kernel_size=2)  #should be 12x12->6x6
+        if self.use_batch_norm:
+            x = self.bn1(x)
         x = F.relu(x)
         x = F.max_pool2d(self.conv2(x), kernel_size=2)   #4x4->2x2
+        if self.use_batch_norm:
+            x = self.bn2(x)
         x = F.relu(x)
         x = F.relu(self.fc1(x.view(-1, self.channels_2*4)))
         x = self.fc2(x)
@@ -40,23 +48,28 @@ class ConvNet(nn.Module):
 
 class AuxNet(nn.Module):
     """ A simple convolution network that processes both images at the same time, but can make use of an auxiliary loss. """
-    def __init__(self):
+    def __init__(self, use_batch_norm = False):
         super().__init__()
         self.channels_1 = 30
         self.channels_2 = 60
         self.conv1 = nn.Conv2d(2, self.channels_1, kernel_size=3) #makes 14x14 -> 12x12
         self.conv2 = nn.Conv2d(self.channels_1, self.channels_2, kernel_size=3) #makes 6x6 -> 4x4
-        self.bn1 = nn.BatchNorm2d(self.channels_1)
-        self.bn2 = nn.BatchNorm2d(self.channels_2)
+
         self.fc1 = nn.Linear(self.channels_2*4, 20)
         self.fc2 = nn.Linear(20, 2)
+        self.use_batch_norm = use_batch_norm
+        if self.use_batch_norm:
+            self.bn1 = nn.BatchNorm2d(self.channels_1)
+            self.bn2 = nn.BatchNorm2d(self.channels_2)
 
     def forward(self, x):
         x = F.max_pool2d(self.conv1(x), kernel_size=2)  #should be 12x12->6x6
-        x = self.bn1(x)
+        if self.use_batch_norm:
+            x = self.bn1(x)
         x = F.relu(x)
         x = F.max_pool2d(self.conv2(x), kernel_size=2)   #4x4->2x2
-        x = self.bn2(x)
+        if self.use_batch_norm:
+            x = self.bn2(x)
         x = F.relu(x)
         y = self.fc1(x.view(-1,self.channels_2*4))
         x = self.fc2(F.relu(y))
@@ -77,7 +90,7 @@ class FullNet(nn.Module):
         elif self.subnet_type == 'parallel':
             self.subnet1 = SiameseSubNet(nb_hidden_subnet)
             self.subnet2 = SiameseSubNet(nb_hidden_subnet)
-        elif self.subnet_type =='naive':
+        elif self.subnet_type == 'naive':
             self.naivesubnet = NaiveSubNet(nb_hidden_subnet)
         else:
             raise ValueError("Not a valid type for the subnetwork")
@@ -106,7 +119,7 @@ class FullNet(nn.Module):
 
         # Combine predictions and compute final result
         if self.use_softmax:
-            x = torch.stack((F.softmax(classes_1), F.softmax(classes_2)), dim=1)
+            x = torch.stack((F.softmax(classes_1, dim=1), F.softmax(classes_2, dim= 1)), dim=1)
         else:
             x = torch.stack((F.relu(classes_1), F.relu(classes_2)), dim=1)
         x = F.relu(self.fc1(x.view(-1,20)))

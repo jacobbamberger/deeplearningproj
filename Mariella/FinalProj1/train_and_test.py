@@ -72,7 +72,6 @@ def train_model(model, train_input, train_target, train_classes=None, learning_r
             total_loss.backward()
             optimizer.step()
 
-        #print(e, acc_loss)
 
 
 def compute_nb_errors(model, input, target, mini_batch_size):

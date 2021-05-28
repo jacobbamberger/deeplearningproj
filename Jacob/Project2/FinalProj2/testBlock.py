@@ -2,6 +2,7 @@ import torch
 import math
 import framework
 import frameworkBlock
+import time
 torch.set_grad_enabled(False)
 
 ######################################################################
@@ -72,15 +73,16 @@ model = frameworkBlock.Sequential((frameworkBlock.Linear(2, 25),
                               frameworkBlock.Linear(25, 25),
                               frameworkBlock.Tanh(),
                               frameworkBlock.Linear(25, 1),
-                              frameworkBlock.ReLu()))
+                              frameworkBlock.Tanh()))
                              
 test_loss = frameworkBlock.MSE()
 
 
 
 print("training on 250 epochs, batch size 50, and learning rate 0.005.")
+tic = time.time()
 train(model, train_input, train_target, nb_epochs=250, batch_size=50, learning_rate=0.005, loss=test_loss)
-
+print( time.time()-tic)
 print("Test error: ", compute_nb_errors(model, test_input, test_target))
 
 

@@ -1,6 +1,7 @@
 import torch
 import math
 import framework
+import time
 
 torch.set_grad_enabled(False)
 
@@ -78,8 +79,9 @@ model = framework.Sequential((framework.Linear(2, 25),
 loss = framework.MSE()
 
 print("training on 250 epochs, batch size 50, and learning rate 0.005.")
+tic = time.time()
 train(model, train_input, train_target, nb_epochs=250, batch_size=50, learning_rate=0.005, loss=loss)
-
+print( time.time()-tic)
 print("Test error: ", compute_nb_errors(model, test_input, test_target))
 
 model = framework.Sequential((framework.Linear(2, 25),
@@ -95,7 +97,7 @@ loss = framework.MSE()
 
 print("training on 250 epochs, batch size 50, and learning rate 0.005.")
 train(model, train_input, train_target, nb_epochs=250, batch_size=50, learning_rate=0.005, loss=loss)
-
+print( time.time()-tic)
 print("Test error: ", compute_nb_errors(model, test_input, test_target))
 
 
