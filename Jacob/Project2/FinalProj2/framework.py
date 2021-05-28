@@ -34,11 +34,9 @@ class Linear(Module):
         else:
         ## Normal distribution initialization:
             self.weights = t_empty(dim_out, dim_in).normal_(mean=0.0, std=1.0)
-            #self.weights = torch.nn.init.normal_(torch.empty(dim_out, dim_in), mean=0.0, std=1.0)
             self.bias = t_empty(dim_out).normal_(mean=0.0, std=1.0)
-            #self.bias = torch.nn.init.normal_(torch.empty(dim_out), mean=0.0, std=1.0)
 
-        # this is where we store this layer's gradient:
+        # This is where we store this layer's gradient:
         self.weights_grad_accum = t_empty(self.dim_out, self.dim_in).fill_(0)
         self.bias_grad_accum = t_empty(self.dim_out).fill_(0)
 
@@ -115,7 +113,7 @@ class ReLu(Module):
 
 
 class Tanh(Module):  # Tanh doesn't have any params so we don't need to update anything in gradient
-    def forward(self, input):  # Do i need to initialize anything?? s is the input and x is output of activation
+    def forward(self, input): 
         self.current_input = input
         return input.tanh()
 
@@ -138,7 +136,7 @@ class Sigmoid(Module):
 
 class MSE(Module):
 
-    def forward(self, prediction, target):  # computes the error, still assumes batch_size=1
+    def forward(self, prediction, target): 
 
         if len(target.shape) < 2:
             target_to_use  = target.unsqueeze(1)
@@ -148,7 +146,7 @@ class MSE(Module):
         return (prediction - target_to_use).pow(2).sum()
 
     def backward(self, prediction,
-                 target):  # computes the gradient of the loss function with respect to the predictions
+                 target):  # Computes the gradient of the loss function with respect to the predictions
         if len(target.shape) < 2:
             target_to_use = target.unsqueeze(1)
         else:
